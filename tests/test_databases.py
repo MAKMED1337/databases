@@ -1,5 +1,6 @@
 import asyncio
 import datetime
+import enum
 import decimal
 import functools
 import os
@@ -30,6 +31,11 @@ class MyEpochType(sqlalchemy.types.TypeDecorator):
 
     def process_result_value(self, value, dialect):
         return self.epoch + datetime.timedelta(days=value)
+
+
+class ActionEnum(enum.Enum):
+    task = 0
+    review = 1
 
 
 metadata = sqlalchemy.MetaData()
@@ -74,6 +80,14 @@ prices = sqlalchemy.Table(
     metadata,
     sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True),
     sqlalchemy.Column("price", sqlalchemy.Numeric(precision=30, scale=20)),
+)
+
+# Used to test Enum
+actions = sqlalchemy.Table(
+    "actions",
+    metadata,
+    sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True),
+    sqlalchemy.Column("action", sqlalchemy.Enum(ActionEnum)),
 )
 
 
@@ -1145,3 +1159,24 @@ async def test_result_unpacking(database_url):
         id, text, completed = result
         assert text == "example1"
         assert completed is True
+
+
+@pytest.mark.parametrize("database_url", DATABASE_URLS)
+@async_adapter
+async def test_enum_field(database_url):
+    """
+    Test Enum columns, to ensure records are coerced to/from proper Python types.
+    """
+
+    async with Database(database_url) as database:
+        async with database.transaction(force_rollback=True):
+            # execute()
+            query = actions.insert()
+            values = {"action": ActionEnum.review}
+            await database.execute(query, values)
+
+            # fetch_all()
+            query = actions.select()
+            results = await database.fetch_all(query=query)
+            assert len(results) == 1
+            assert results[0]["action"] == ActionEnum.review

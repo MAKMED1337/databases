@@ -34,6 +34,12 @@ class ConnectionBackend:
         row = await self.fetch_one(query)
         return None if row is None else row[column]
 
+    async def fetch_column(
+        self, query: ClauseElement, column: typing.Any = 0
+    ) -> typing.Any:
+        result = await self.fetch_all(query)
+        return [row[column] for row in result]
+
     async def execute(self, query: ClauseElement) -> typing.Any:
         raise NotImplementedError()  # pragma: no cover
 

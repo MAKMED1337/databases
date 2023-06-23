@@ -147,8 +147,8 @@ def async_adapter(wrapped_func):
 @async_adapter
 async def test_queries(database_url):
     """
-    Test that the basic `execute()`, `execute_many()`, `fetch_all()``, and
-    `fetch_one()` interfaces are all supported (using SQLAlchemy core).
+    Test that the basic `execute()`, `execute_many()`, `fetch_all()`, `fetch_one()`, `fetch_val()`, `fetch_column()`
+    interfaces are all supported (using SQLAlchemy core).
     """
     async with Database(database_url) as database:
         async with database.transaction(force_rollback=True):
@@ -218,6 +218,16 @@ async def test_queries(database_url):
             assert iterate_results[1]["completed"] == False
             assert iterate_results[2]["text"] == "example3"
             assert iterate_results[2]["completed"] == True
+
+            # fetch_column()
+            query = sqlalchemy.sql.select(*[notes.c.text])
+            result = await database.fetch_column(query=query)
+            assert result == ["example1", "example2", "example3"]
+
+            # fetch_column() with a different column
+            query = sqlalchemy.sql.select(*[notes.c.id, notes.c.text])
+            result = await database.fetch_column(query=query, column=1)
+            assert result == ["example1", "example2", "example3"]
 
 
 @pytest.mark.parametrize("database_url", DATABASE_URLS)

@@ -189,6 +189,15 @@ class Database:
     ) -> typing.Any:
         async with self.connection() as connection:
             return await connection.fetch_val(query, values, column=column)
+    
+    async def fetch_column(
+        self,
+        query: typing.Union[ClauseElement, str],
+        values: typing.Optional[dict] = None,
+        column: typing.Any = 0,
+    ) -> typing.List[typing.Any]:
+        async with self.connection() as connection:
+            return await connection.fetch_column(query, values, column=column)
 
     async def execute(
         self,
@@ -307,6 +316,16 @@ class Connection:
         built_query = self._build_query(query, values)
         async with self._query_lock:
             return await self._connection.fetch_val(built_query, column)
+
+    async def fetch_column(
+        self,
+        query: typing.Union[ClauseElement, str],
+        values: typing.Optional[dict] = None,
+        column: typing.Any = 0,
+    ) -> typing.List[typing.Any]:
+        built_query = self._build_query(query, values)
+        async with self._query_lock:
+            return await self._connection.fetch_column(built_query, column)
 
     async def execute(
         self,

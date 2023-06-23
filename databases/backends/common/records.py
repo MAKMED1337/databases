@@ -71,7 +71,7 @@ class Record(RecordInterface):
         return raw
 
     def __iter__(self) -> typing.Iterator:
-        return iter(self._row.keys())
+        return iter(self._row.values())
 
     def __len__(self) -> int:
         return len(self._row)

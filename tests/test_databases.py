@@ -1129,3 +1129,19 @@ async def test_mapping_property_interface(database_url):
         list_result = await database.fetch_all(query=query)
         assert list_result[0]._mapping["text"] == "example1"
         assert list_result[0]._mapping["completed"] is True
+
+
+@pytest.mark.parametrize("database_url", DATABASE_URLS)
+@async_adapter
+async def test_result_unpacking(database_url):
+    async with Database(database_url) as database:
+        query = notes.insert()
+        values = {"text": "example1", "completed": True}
+        await database.execute(query, values)
+
+        query = notes.select().where(notes.c.text == "example1")
+        result = await database.fetch_one(query=query)
+
+        id, text, completed = result
+        assert text == "example1"
+        assert completed is True
